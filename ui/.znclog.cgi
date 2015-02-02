@@ -16,8 +16,14 @@ eval $(
 	cat "${HOME}/${ZNCLOG_DOTFILE}" | \
 	grep -vE '^#' | \
 	grep -vE '^[[:space:]]*$' | \
-	sed -E 's/^/export /'
+	sed -E 's/^/export DOT_/'
 )
+
+#Hard-coded defaults if not set via DOT-file
+#Step 1
+	DOT_ZNC_LOG_DIRECTORY=${DOT_ZNC_LOG_DIRECTORY-"${HOME}/.znc/users/$USER/networks/freenode/moddata/log/znc_log"}
+	DOT_DAYS_BACK=${DOT_DAYS_BACK-"infinite"}
+	DOT_HIDE_STATUS=${DOT_HIDE_STATUS-"no"}
 
 function print_znclog_help() {
 			cat <<EOF
@@ -37,9 +43,13 @@ EXAMPLES
         $ZNCLOG_CGI_INFO -msmiffo
 
 OPTIONS
+        Defaults within []
 
     General options
         -h          This help
+        -L          Log directory [$DOT_ZNC_LOG_DIRECTORY]
+        -n          Number of days back [$DOT_DAYS_BACK]
+        -x          Hide status changes yes/no [$DOT_HIDE_STATUS]
 
     Debugging and verbosity options
         -d          Output additional debugging info and additional
@@ -60,7 +70,7 @@ AUTHOR
 
 EOF
 }
-	while getopts hm:d OPTION; do
+	while getopts hL:n:x:d OPTION; do
 		case $OPTION in
 		h)
 			if [ -t 1 ]; then
@@ -69,6 +79,15 @@ EOF
 				print_znclog_help $0
 			fi
 			exit 0
+			;;
+		L)
+			ZNC_LOG_DIRECTORY="${OPTARG}"
+			;;
+		n)
+			DAYS_BACK="${OPTARG}"
+			;;
+		x)
+			HIDE_STATUS="${OPTARG}"
 			;;
 		d)
 			ZNCLOG_DEBUG="yes"
@@ -95,11 +114,21 @@ EOF
 #Actuating defaults if needed
 	ZNCLOG_DEBUG=${ZNCLOG_DEBUG-"no"}
 
+
+#Final variable deduction
+#Step 2
+	ZNC_LOG_DIRECTORY=${ZNC_LOG_DIRECTORY-"${DOT_ZNC_LOG_DIRECTORY}"}
+	DAYS_BACK=${DAYS_BACK-"${DOT_DAYS_BACK}"}
+	HIDE_STATUS=${HIDE_STATUS-"${DOT_HIDE_STATUS}"}
+
 	if [ $ZNCLOG_DEBUG == "yes" ]; then
 		exec 3>&1 1>&2
 		echo "Variables:"
 		echo "  ZNCLOG_DEBUG=$ZNCLOG_DEBUG"
 		echo "  ZNCLOG_DIR=$ZNCLOG_DIR"
+		echo "  ZNC_LOG_DIRECTORY=$ZNC_LOG_DIRECTORY"
+		echo "  DAYS_BACK=$DAYS_BACK"
+		echo "  HIDE_STATUS=$HIDE_STATUS"
 		echo
 		exec 1>&3 3>&-
 	fi
