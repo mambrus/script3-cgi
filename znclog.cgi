@@ -13,19 +13,28 @@ function znclog() {
 	else
 		local TAIL1="tail -n${DAYS_BACK}"
 	fi
+	if [ $REVERSE == "yes" ]; then
+		local REV=tac
+	else
+		local REV="cat --"
+	fi
+
 
 	for F in $(ls "${ZNC_LOG_DIRECTORY}" | grep -E '#bladerf.*\.log' | $TAIL1 ); do
-		echo '===================================='
-		CH_NAME=$(echo  $F | cut -f1 -d"_")
-		LOG_DATE=$(echo $F | cut -f2 -d"_" | sed -E 's/\.log$//')
-		echo "${CH_NAME} ${LOG_DATE}"
-		echo '===================================='
-		if [ $HIDE_STATUS == 'yes' ]; then
-			cat "${ZNC_LOG_DIRECTORY}/${F}" | \
-				grep -Ev '^\[.*\] \*\*\* .*:'
-		else
-			cat "${ZNC_LOG_DIRECTORY}/${F}"
-		fi
+		(
+			echo '===================================='
+			CH_NAME=$(echo  $F | cut -f1 -d"_")
+			LOG_DATE=$(echo $F | cut -f2 -d"_" | sed -E 's/\.log$//')
+			echo "${CH_NAME} ${LOG_DATE}"
+			echo '===================================='
+
+			if [ $HIDE_STATUS == 'yes' ]; then
+				cat "${ZNC_LOG_DIRECTORY}/${F}" | \
+					grep -Ev '^\[.*\] \*\*\* .*:'
+			else
+				cat "${ZNC_LOG_DIRECTORY}/${F}"
+			fi
+		) | $REV
 		local RC=0
 	done
 	return $RC
