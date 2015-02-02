@@ -7,6 +7,7 @@ if [ -z $ZNCLOG_CGI ]; then
 ZNCLOG_CGI="znclog.cgi"
 
 function znclog() {
+	local RC=-1
 	if [ $DAYS_BACK == "infinite" ]; then
 		local TAIL1="cat --"
 	else
@@ -25,8 +26,16 @@ function znclog() {
 		else
 			cat "${ZNC_LOG_DIRECTORY}/${F}"
 		fi
+		local RC=0
 	done
+	return $RC
 }
+
+#if [ "X${TERM}" == "X" ]; then
+	export USER=mambrus
+	export HOME=/home/$USER
+	export PATH=${HOME}/bin:$PATH
+#fi
 
 source s3.ebasename.sh
 if [ "$ZNCLOG_CGI" == $( ebasename $0 ) ]; then
@@ -34,16 +43,35 @@ if [ "$ZNCLOG_CGI" == $( ebasename $0 ) ]; then
 
 	#Script root directory.
 	ZNCLOG_DIR=$(dirname $(readlink -f $0))
-	export PATH=${ZNCLOG_DIR}:$PATH
+	export PATH=${ZNCLOG_DIR}/../s3:$PATH
 
 	ZNCLOG_CGI_INFO=${ZNCLOG_CGI}
 	#source .cgi.ui..znclog.cgi
 	source ${ZNCLOG_DIR}/ui/.znclog.cgi
 	set -o pipefail
 
-	znclog 
+#	if [ "X${TERM}" == "X" ]; then
+		echo "Content-type: text/html"
+		echo ""
 
-	exit $?
+		echo '<html>'
+		echo '<head>'
+		echo '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">'
+		echo '<title>ZNC log</title>'
+		echo '</head>'
+		echo '<body>'
+		echo '<pre>'
+#	fi
+
+	znclog
+
+#	if [ "X${TERM}" == "X" ]; then
+		echo '</pre>'
+		echo '</body>'
+		echo '</html>'
+#	fi
+
+	exit 0
 fi
 
 fi
