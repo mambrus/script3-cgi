@@ -72,7 +72,7 @@ if [ "$ZNCLOG_CGI" == $( ebasename $0 ) ]; then
 		echo '<pre>'
 #	fi
 
-	znclog
+	znclog | sed -e 's/</\&lt;/g' -e 's/>/\&gt;/g'
 
 #	if [ "X${TERM}" == "X" ]; then
 		echo '</pre>'
