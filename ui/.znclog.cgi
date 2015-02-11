@@ -25,6 +25,7 @@ eval $(
 	DOT_DAYS_BACK=${DOT_DAYS_BACK-"infinite"}
 	DOT_HIDE_STATUS=${DOT_HIDE_STATUS-"no"}
 	DOT_REVERSE=${DOT_REVERSE-"no"}
+	DOT_CHANNEL=${DOT_CHANNEL-"#bladerf"}
 
 function print_znclog_help() {
 			cat <<EOF
@@ -53,6 +54,7 @@ OPTIONS
         -L          Log directory [$DOT_ZNC_LOG_DIRECTORY]
         -n          Number of days back [$DOT_DAYS_BACK]
         -x          Hide status changes yes/no [$DOT_HIDE_STATUS]
+        -c          Which channel [$DOT_CHANNEL]
         -r          Reverse toggle [$DOT_REVERSE]
 
     Debugging and verbosity options
@@ -74,7 +76,7 @@ AUTHOR
 
 EOF
 }
-	while getopts hL:n:x:rd OPTION; do
+	while getopts hL:n:x:c:rd OPTION; do
 		case $OPTION in
 		h)
 			if [ -t 1 ]; then
@@ -92,6 +94,9 @@ EOF
 			;;
 		x)
 			HIDE_STATUS="${OPTARG}"
+			;;
+		x)
+			CHANNEL="${OPTARG}"
 			;;
 		r)
 			if [ $DOT_REVERSE == "yes" ]; then
@@ -132,6 +137,7 @@ EOF
 	DAYS_BACK=${DAYS_BACK-"${DOT_DAYS_BACK}"}
 	HIDE_STATUS=${HIDE_STATUS-"${DOT_HIDE_STATUS}"}
 	REVERSE=${REVERSE-"${DOT_REVERSE}"}
+	CHANNEL=${CHANNEL-"${DOT_CHANNEL}"}
 
 	if [ $ZNCLOG_DEBUG == "yes" ]; then
 		exec 3>&1 1>&2
@@ -142,6 +148,7 @@ EOF
 		echo "  DAYS_BACK=$DAYS_BACK"
 		echo "  HIDE_STATUS=$HIDE_STATUS"
 		echo "  REVERSE=$REVERSE"
+		echo "  CHANNEL=$CHANNEL"
 		echo
 		exec 1>&3 3>&-
 	fi

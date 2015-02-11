@@ -20,7 +20,7 @@ function znclog() {
 	fi
 
 
-	for F in $(ls "${ZNC_LOG_DIRECTORY}" | grep -E '#bladerf.*\.log' | $TAIL1 | $REV); do
+	for F in $(ls "${ZNC_LOG_DIRECTORY}" | grep -E "${CHANNEL}_.*\.log" | $TAIL1 | $REV); do
 		(
 			echo '===================================='
 			CH_NAME=$(echo  $F | cut -f1 -d"_")
