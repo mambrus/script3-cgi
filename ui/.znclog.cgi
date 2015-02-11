@@ -118,6 +118,49 @@ EOF
 	done
 	shift $(($OPTIND - 1))
 
+
+# Save the old internal field separator.
+OIFS="$IFS"
+
+# Set the field separator to & and parse the QUERY_STRING at the ampersand.
+IFS="${IFS}&"
+set $QUERY_STRING
+Args="$*"
+IFS="$OIFS"
+
+# Next parse the individual "name=value" tokens.
+
+# DAYS_BACK=""
+# HIDE_STATUS=""
+# REVERSE=""
+# CHANNEL=""
+
+for i in $Args ;do
+
+#Set the field separator to =
+	IFS="${OIFS}="
+	set $i
+	IFS="${OIFS}"
+
+	case $1 in
+#		namez) ARGZ="${2/\// /}"
+		days_back) DAYS_BACK="${2}"
+			   ;;
+		hide_status) HIDE_STATUS="${2}"
+			   ;;
+		reverse) REVERSE="${2}"
+			   ;;
+		channel) CHANNEL="${2}"
+			   ;;
+		*)     echo "<hr>Warning:"\
+					"<br>Unrecognized variable \'$1\' passed by FORM in QUERY_STRING.<hr>"
+			   ;;
+
+	esac
+done
+
+
+
 #	if [ $# -ne 1 ]; then
 #		echo "Syntax error: arguments" \
 #			"$ZNCLOG_CGI_INFO number of arguments should be exactly one:" \
