@@ -54,35 +54,33 @@ function znclog() {
 	return $RC
 }
 
-if [ "${WEBMODE}" == "yes" ]; then
-	export USER=mambrus
-	export HOME=/home/$USER
+# Below cannot work test against WEBMODE until ui/.znclog.cgi is read
+# NOTE THAT $PWD RELATION TO $HOME and $USER IS AN ASUMPTION WHICH MAY NOT BE
+# TRUE
+if [ "X${REMOTE_PORT}" != "X" ]; then
+	export HOME=$(dirname $(dirname $(echo $PWD)))
+	export USER=$(basename $(echo $HOME))
 	export PATH=${HOME}/bin:$PATH
 fi
 
-source s3.ebasename.sh
-if [ "$ZNCLOG_CGI" == $( ebasename $0 ) ]; then
-	#Not sourced, do something with this.
+#Script root directory.
+ZNCLOG_DIR=$(dirname $(readlink -f $0))
+export PATH=${ZNCLOG_DIR}/../s3:$PATH
 
-	#Script root directory.
-	ZNCLOG_DIR=$(dirname $(readlink -f $0))
-	export PATH=${ZNCLOG_DIR}/../s3:$PATH
+ZNCLOG_CGI_INFO=${ZNCLOG_CGI}
+#source .cgi.ui..znclog.cgi
+source ${ZNCLOG_DIR}/ui/.znclog.cgi
+source ${ZNCLOG_DIR}/funcs/html.sh
+set -o pipefail
 
-	ZNCLOG_CGI_INFO=${ZNCLOG_CGI}
-	#source .cgi.ui..znclog.cgi
-	source ${ZNCLOG_DIR}/ui/.znclog.cgi
-	source ${ZNCLOG_DIR}/funcs/html.sh
-	set -o pipefail
+page_header "ZNC log @ ${SERVER_SIGNATURE}"
 
-	page_header "ZNC log @ ${SERVER_SIGNATURE}"
+znclog | \
+	cnvrt_urls2links | \
+	cnvrt_special_chars
 
-	znclog | \
-		cnvrt_urls2links | \
-		cnvrt_special_chars
+page_footer
 
-	page_footer
-
-	exit 0
-fi
+exit 0
 
 fi
