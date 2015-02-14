@@ -26,6 +26,7 @@ eval $(
 	DOT_HIDE_STATUS=${DOT_HIDE_STATUS-"no"}
 	DOT_REVERSE=${DOT_REVERSE-"no"}
 	DOT_CHANNEL=${DOT_CHANNEL-"#bladerf"}
+	DOT_WEBMODE=${DOT_WEBMODE-"yes"}
 
 function print_znclog_help() {
 			cat <<EOF
@@ -53,8 +54,9 @@ OPTIONS
         -h          This help
         -L          Log directory [$DOT_ZNC_LOG_DIRECTORY]
         -n          Number of days back [$DOT_DAYS_BACK]
-        -x          Hide status changes yes/no [$DOT_HIDE_STATUS]
+        -x          Hide status changes (yes/no) [$DOT_HIDE_STATUS]
         -c          Which channel [$DOT_CHANNEL]
+        -w          Web formatted or terminal mode (yes/no/auto) [$DOT_WEBMODE]
         -r          Reverse toggle [$DOT_REVERSE]
 
     Debugging and verbosity options
@@ -76,7 +78,7 @@ AUTHOR
 
 EOF
 }
-	while getopts hL:n:x:c:rd OPTION; do
+	while getopts hL:n:x:w:c:rd OPTION; do
 		case $OPTION in
 		h)
 			if [ -t 1 ]; then
@@ -95,8 +97,11 @@ EOF
 		x)
 			HIDE_STATUS="${OPTARG}"
 			;;
-		x)
+		c)
 			CHANNEL="${OPTARG}"
+			;;
+		w)
+			WEBMODE="${OPTARG}"
 			;;
 		r)
 			if [ $DOT_REVERSE == "yes" ]; then
@@ -118,46 +123,75 @@ EOF
 	done
 	shift $(($OPTIND - 1))
 
+# Special handling of this variable breaking convention for these
+# scripts.
+WEBMODE=${WEBMODE-"${DOT_WEBMODE}"}
+if [ "X${SERVER_SIGNATURE}" != "X" ] -a [ "X${WEBMODE}" == "Xauto" ]; then
+	WEBMODE='yes'
+fi
+# ---------------------------------------------------------------
 
-# Save the old internal field separator.
-OIFS="$IFS"
+if [ "X${WEBMODE}" == "Xyes" ]; then
+	if [ -t 0 ] -a [ -t 1 ]; then
+		#Has terminal on both stdin and stdout
+		if [ $# -gt 0 ]; then
+			#Running in TERMINAL as WEBMODE (test-mode)
+			if [ "X${QUERY_STRING}" != "X" ]; then
+				exec 3>&1 1>&2
+				echo "QUERY_STRING [${QUERY_STRING}] cant be defined in"
+				echo "terminal mode when arguments are passed"
+				exec 1>&3 3>&-
+				exit 1
+			fi
+			QUERY_STRING=$1
+			for (( I=2 ; I<$# ; I++ )); do
+				QUERY_STRING="${QUERY_STRING}&${I}"
+			done
+		fi
+	fi
 
-# Set the field separator to & and parse the QUERY_STRING at the ampersand.
-IFS="${IFS}&"
-set $QUERY_STRING
-Args="$*"
-IFS="$OIFS"
+	# Defining to empty string if not defined avoid spewing out environment
+	QUERY_STRING=${QUERY_STRING-""}
 
-# Next parse the individual "name=value" tokens.
+	# Save the old internal field separator.
+	OIFS="$IFS"
 
-# DAYS_BACK=""
-# HIDE_STATUS=""
-# REVERSE=""
-# CHANNEL=""
+	# Set the field separator to & and parse the QUERY_STRING at the ampersand.
+	IFS="${IFS}&"
+	set $QUERY_STRING
+	Args="$*"
+	IFS="$OIFS"
 
-for i in $Args ;do
+	# Next parse the individual "name=value" tokens.
 
-#Set the field separator to =
-	IFS="${OIFS}="
-	set $i
-	IFS="${OIFS}"
+	# DAYS_BACK=""
+	# HIDE_STATUS=""
+	# REVERSE=""
+	# CHANNEL=""
 
-	case $1 in
-#		namez) ARGZ="${2/\// /}"
-		days_back) DAYS_BACK="${2}"
-			   ;;
-		hide_status) HIDE_STATUS="${2}"
-			   ;;
-		reverse) REVERSE="${2}"
-			   ;;
-		channel) CHANNEL="${2}"
-			   ;;
-		*)     echo "<hr>Warning:"\
-					"<br>Unrecognized variable \'$1\' passed by FORM in QUERY_STRING.<hr>"
-			   ;;
+	for i in $Args ;do
 
-	esac
-done
+		#Set the field separator to =
+		IFS="${OIFS}="
+		set $i
+		IFS="${OIFS}"
+
+		case $1 in
+			days_back) DAYS_BACK="${2}"
+				   ;;
+			hide_status) HIDE_STATUS="${2}"
+				   ;;
+			reverse) REVERSE="${2}"
+				   ;;
+			channel) CHANNEL="${2}"
+				   ;;
+			*)     echo "<hr>Warning:"\
+						"<br>Unrecognized variable \'$1\' passed by FORM in QUERY_STRING.<hr>"
+				   ;;
+
+		esac
+	done
+fi
 
 
 
@@ -192,7 +226,10 @@ done
 		echo "  HIDE_STATUS=$HIDE_STATUS"
 		echo "  REVERSE=$REVERSE"
 		echo "  CHANNEL=$CHANNEL"
+		echo "  WEBMODE=$WEBMODE"
+		echo "  QUERY_STRING=$QUERY_STRING"
 		echo
 		exec 1>&3 3>&-
+		exit 0
 	fi
 

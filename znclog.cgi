@@ -7,7 +7,7 @@ if [ -z $ZNCLOG_CGI ]; then
 ZNCLOG_CGI="znclog.cgi"
 
 function znclog() {
-	local RC=-1
+	local RC=1
 	if [ $DAYS_BACK == "infinite" ]; then
 		local TAIL1="cat --"
 	else
@@ -19,14 +19,28 @@ function znclog() {
 		local REV="cat --"
 	fi
 
+	local NR_LOGS=$(
+		ls "${ZNC_LOG_DIRECTORY}" 2>/dev/null | \
+		grep -E "#${CHANNEL}_.*\.log" | \
+		wc -l
+	)
+	if [ "x${NR_LOGS}" == "x0" ]; then
+		echo -n '=========1=========2=========3=========4'
+		echo    '=========5=========6=========7=========8'
+		echo    "No logs found for channel [#${CHANNEL}]"
+		echo -n '=========1=========2=========3=========4'
+		echo    '=========5=========6=========7=========8'
+	fi
 
-	for F in $(ls "${ZNC_LOG_DIRECTORY}" | grep -E "${CHANNEL}_.*\.log" | $TAIL1 | $REV); do
+	for F in $(ls "${ZNC_LOG_DIRECTORY}" | grep -E "#${CHANNEL}_.*\.log" | $TAIL1 | $REV); do
 		(
-			echo '===================================='
+			echo -n '=========1=========2=========3=========4'
+			echo    '=========5=========6=========7=========8'
 			CH_NAME=$(echo  $F | cut -f1 -d"_")
 			LOG_DATE=$(echo $F | cut -f2 -d"_" | sed -E 's/\.log$//')
 			echo "${CH_NAME} ${LOG_DATE}"
-			echo '===================================='
+			echo -n '=========1=========2=========3=========4'
+			echo    '=========5=========6=========7=========8'
 
 			if [ $HIDE_STATUS == 'yes' ]; then
 				cat "${ZNC_LOG_DIRECTORY}/${F}" | \
@@ -40,11 +54,11 @@ function znclog() {
 	return $RC
 }
 
-#if [ "X${TERM}" == "X" ]; then
+if [ "${WEBMODE}" == "yes" ]; then
 	export USER=mambrus
 	export HOME=/home/$USER
 	export PATH=${HOME}/bin:$PATH
-#fi
+fi
 
 source s3.ebasename.sh
 if [ "$ZNCLOG_CGI" == $( ebasename $0 ) ]; then
@@ -57,28 +71,16 @@ if [ "$ZNCLOG_CGI" == $( ebasename $0 ) ]; then
 	ZNCLOG_CGI_INFO=${ZNCLOG_CGI}
 	#source .cgi.ui..znclog.cgi
 	source ${ZNCLOG_DIR}/ui/.znclog.cgi
+	source ${ZNCLOG_DIR}/funcs/html.sh
 	set -o pipefail
 
-#	if [ "X${TERM}" == "X" ]; then
-		echo "Content-type: text/html"
-		echo ""
+	page_header "ZNC log @ ${SERVER_SIGNATURE}"
 
-		echo '<html>'
-		echo '<head>'
-		echo '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">'
-		echo '<title>ZNC log</title>'
-		echo '</head>'
-		echo '<body>'
-		echo '<pre>'
-#	fi
+	znclog | \
+		cnvrt_urls2links | \
+		cnvrt_special_chars
 
-	znclog | sed -e 's/</\&lt;/g' -e 's/>/\&gt;/g'
-
-#	if [ "X${TERM}" == "X" ]; then
-		echo '</pre>'
-		echo '</body>'
-		echo '</html>'
-#	fi
+	page_footer
 
 	exit 0
 fi
