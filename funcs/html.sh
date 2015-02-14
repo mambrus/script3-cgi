@@ -18,7 +18,9 @@ function page_header() {
 		echo "<title>${TITLE}</title>"
 		echo '</head>'
 		echo '<body>'
-		echo '<pre>'
+		if [ "X${TELETEXT}" == "Xyes" ]; then
+			echo '<pre>'
+		fi
 	fi
 }
 
@@ -29,13 +31,20 @@ function cnvrt_special_chars() {
 		cat --
 	fi
 }
-#<a href="http://www.w3schools.com">Visit W3Schools.com!</a>
+
 function cnvrt_urls2links() {
 	if [ "X${WEBMODE}" == "Xyes" -a "X${URL_CONVERT}" == "Xyes" ]; then
 		cat -- | \
 			sed -E 's/(http[s]?:\/\/)([[:graph:]]+)/<a href="\1\2">\1\2<\/a>/g'
-			
-			#sed -E 's/(http[s]?:\/\/)(.*)([[:space:]])/<a href="\1\2">\1\2<\/a>\3/'
+	else
+		cat --
+	fi
+}
+
+function cnvrt_eol() {
+	if [ "X${WEBMODE}" == "Xyes" -a "X${TELETEXT}" == "Xno" ]; then
+		cat -- | \
+			sed -E 's/$/<br>/g'
 	else
 		cat --
 	fi
@@ -43,7 +52,9 @@ function cnvrt_urls2links() {
 
 function page_footer() {
 	if [ "X${WEBMODE}" == "Xyes" ]; then
-		echo '</pre>'
+		if [ "X${TELETEXT}" == "Xyes" ]; then
+			echo '</pre>'
+		fi
 		echo '</body>'
 		echo '</html>'
 	fi

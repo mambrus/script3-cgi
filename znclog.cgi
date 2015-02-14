@@ -77,7 +77,8 @@ page_header "ZNC log @ ${SERVER_SIGNATURE}"
 
 znclog | \
 	cnvrt_special_chars | \
-	cnvrt_urls2links
+	cnvrt_urls2links | \
+	cnvrt_eol
 
 page_footer
 

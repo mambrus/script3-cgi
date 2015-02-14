@@ -28,6 +28,7 @@ eval $(
 	DOT_CHANNEL=${DOT_CHANNEL-"#bladerf"}
 	DOT_WEBMODE=${DOT_WEBMODE-"auto"}
 	DOT_URL_CONVERT=${DOT_URL_CONVERT-"yes"}
+	DOT_TELETEXT=${DOT_TELETEXT-"no"}
 
 function print_znclog_help() {
 			cat <<EOF
@@ -60,6 +61,7 @@ OPTIONS
         -w          Web formatted or terminal mode (yes/no/auto) [$DOT_WEBMODE]
         -r          Reverse toggle [$DOT_REVERSE]
         -l          Convert URL:s to links toggle [$DOT_URL_CONVERT]
+        -t          Convert URL:s to links toggle [$DOT_TELETEXT]
 
     Debugging and verbosity options
         -d          Output additional debugging info and additional
@@ -80,7 +82,7 @@ AUTHOR
 
 EOF
 }
-	while getopts hL:n:x:w:c:rld OPTION; do
+	while getopts hL:n:x:w:c:rltd OPTION; do
 		case $OPTION in
 		h)
 			if [ -t 1 ]; then
@@ -117,6 +119,13 @@ EOF
 				URL_CONVERT="no"
 			else
 				URL_CONVERT="yes"
+			fi
+			;;
+		t)
+			if [ $DOT_TELETEXT == "yes" ]; then
+				TELETEXT="no"
+			else
+				TELETEXT="yes"
 			fi
 			;;
 		d)
@@ -194,6 +203,8 @@ if [ "X${WEBMODE}" == "Xyes" ]; then
 				   ;;
 			url_convert) URL_CONVERT="${2}"
 				   ;;
+			teletext) TELETEXT="${2}"
+				   ;;
 			channel) CHANNEL="${2}"
 				   ;;
 			*)     echo "<hr>Warning:"\
@@ -227,6 +238,7 @@ fi
 	REVERSE=${REVERSE-"${DOT_REVERSE}"}
 	CHANNEL=${CHANNEL-"${DOT_CHANNEL}"}
 	URL_CONVERT=${URL_CONVERT-"${DOT_URL_CONVERT}"}
+	TELETEXT=${TELETEXT-"${DOT_TELETEXT}"}
 
 	if [ $ZNCLOG_DEBUG == "yes" ]; then
 		exec 3>&1 1>&2
@@ -240,6 +252,7 @@ fi
 		echo "  CHANNEL=$CHANNEL"
 		echo "  WEBMODE=$WEBMODE"
 		echo "  URL_CONVERT=$URL_CONVERT"
+		echo "  TELETEXT=$TELETEXT"
 		echo "  QUERY_STRING=$QUERY_STRING"
 		echo
 		exec 1>&3 3>&-
