@@ -27,6 +27,7 @@ eval $(
 	DOT_REVERSE=${DOT_REVERSE-"no"}
 	DOT_CHANNEL=${DOT_CHANNEL-"#bladerf"}
 	DOT_WEBMODE=${DOT_WEBMODE-"auto"}
+	DOT_URL_CONVERT=${DOT_URL_CONVERT-"yes"}
 
 function print_znclog_help() {
 			cat <<EOF
@@ -58,6 +59,7 @@ OPTIONS
         -c          Which channel [$DOT_CHANNEL]
         -w          Web formatted or terminal mode (yes/no/auto) [$DOT_WEBMODE]
         -r          Reverse toggle [$DOT_REVERSE]
+        -l          Convert URL:s to links toggle [$DOT_URL_CONVERT]
 
     Debugging and verbosity options
         -d          Output additional debugging info and additional
@@ -78,7 +80,7 @@ AUTHOR
 
 EOF
 }
-	while getopts hL:n:x:w:c:rd OPTION; do
+	while getopts hL:n:x:w:c:rld OPTION; do
 		case $OPTION in
 		h)
 			if [ -t 1 ]; then
@@ -110,6 +112,13 @@ EOF
 				REVERSE="yes"
 			fi
 			;;
+		l)
+			if [ $DOT_URL_CONVERT == "yes" ]; then
+				URL_CONVERT="no"
+			else
+				URL_CONVERT="yes"
+			fi
+			;;
 		d)
 			ZNCLOG_DEBUG="yes"
 			;;
@@ -126,13 +135,13 @@ EOF
 # Special handling of this variable breaking convention for these
 # scripts.
 WEBMODE=${WEBMODE-"${DOT_WEBMODE}"}
-if [ "X${REMOTE_PORT}" != "X" ] -a [ "X${WEBMODE}" == "Xauto" ]; then
+if [ "X${REMOTE_PORT}" != "X" -a  "X${WEBMODE}" == "Xauto" ]; then
 	WEBMODE='yes'
 fi
 # ---------------------------------------------------------------
 
 if [ "X${WEBMODE}" == "Xyes" ]; then
-	if [ -t 0 ] -a [ -t 1 ]; then
+	if [ -t 0  -a  -t 1 ]; then
 		#Has terminal on both stdin and stdout
 		if [ $# -gt 0 ]; then
 			#Running in TERMINAL as WEBMODE (test-mode)
@@ -144,8 +153,8 @@ if [ "X${WEBMODE}" == "Xyes" ]; then
 				exit 1
 			fi
 			QUERY_STRING=$1
-			for (( I=2 ; I<$# ; I++ )); do
-				QUERY_STRING="${QUERY_STRING}&${I}"
+			for (( I=2 ; I<=$# ; I++ )); do
+				QUERY_STRING="${QUERY_STRING}&$(eval echo \$${I})"
 			done
 		fi
 	fi
@@ -183,6 +192,8 @@ if [ "X${WEBMODE}" == "Xyes" ]; then
 				   ;;
 			reverse) REVERSE="${2}"
 				   ;;
+			url_convert) URL_CONVERT="${2}"
+				   ;;
 			channel) CHANNEL="${2}"
 				   ;;
 			*)     echo "<hr>Warning:"\
@@ -215,6 +226,7 @@ fi
 	HIDE_STATUS=${HIDE_STATUS-"${DOT_HIDE_STATUS}"}
 	REVERSE=${REVERSE-"${DOT_REVERSE}"}
 	CHANNEL=${CHANNEL-"${DOT_CHANNEL}"}
+	URL_CONVERT=${URL_CONVERT-"${DOT_URL_CONVERT}"}
 
 	if [ $ZNCLOG_DEBUG == "yes" ]; then
 		exec 3>&1 1>&2
@@ -227,6 +239,7 @@ fi
 		echo "  REVERSE=$REVERSE"
 		echo "  CHANNEL=$CHANNEL"
 		echo "  WEBMODE=$WEBMODE"
+		echo "  URL_CONVERT=$URL_CONVERT"
 		echo "  QUERY_STRING=$QUERY_STRING"
 		echo
 		exec 1>&3 3>&-

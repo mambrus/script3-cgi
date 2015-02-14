@@ -76,8 +76,8 @@ set -o pipefail
 page_header "ZNC log @ ${SERVER_SIGNATURE}"
 
 znclog | \
-	cnvrt_urls2links | \
-	cnvrt_special_chars
+	cnvrt_special_chars | \
+	cnvrt_urls2links
 
 page_footer
 

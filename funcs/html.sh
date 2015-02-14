@@ -8,7 +8,7 @@
 function page_header() {
 	local TITLE=$1
 
-	if [ "${WEBMODE}" == "yes" ]; then
+	if [ "X${WEBMODE}" == "Xyes" ]; then
 		echo "Content-type: text/html"
 		echo ""
 
@@ -23,23 +23,26 @@ function page_header() {
 }
 
 function cnvrt_special_chars() {
-	if [ "${WEBMODE}" == "yes" ]; then
+	if [ "X${WEBMODE}" == "Xyes" ]; then
 		cat -- | sed -e 's/</\&lt;/g' -e 's/>/\&gt;/g'
 	else
 		cat --
 	fi
 }
-
+#<a href="http://www.w3schools.com">Visit W3Schools.com!</a>
 function cnvrt_urls2links() {
-	if [ "${WEBMODE}" == "yes" ]; then
-		cat --
+	if [ "X${WEBMODE}" == "Xyes" -a "X${URL_CONVERT}" == "Xyes" ]; then
+		cat -- | \
+			sed -E 's/(http[s]?:\/\/)([[:graph:]]+)/<a href="\1\2">\1\2<\/a>/g'
+			
+			#sed -E 's/(http[s]?:\/\/)(.*)([[:space:]])/<a href="\1\2">\1\2<\/a>\3/'
 	else
 		cat --
 	fi
 }
 
 function page_footer() {
-	if [ "${WEBMODE}" == "yes" ]; then
+	if [ "X${WEBMODE}" == "Xyes" ]; then
 		echo '</pre>'
 		echo '</body>'
 		echo '</html>'
