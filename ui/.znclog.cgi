@@ -26,7 +26,7 @@ eval $(
 	DOT_HIDE_STATUS=${DOT_HIDE_STATUS-"no"}
 	DOT_REVERSE=${DOT_REVERSE-"no"}
 	DOT_CHANNEL=${DOT_CHANNEL-"#bladerf"}
-	DOT_WEBMODE=${DOT_WEBMODE-"yes"}
+	DOT_WEBMODE=${DOT_WEBMODE-"auto"}
 
 function print_znclog_help() {
 			cat <<EOF
@@ -126,7 +126,7 @@ EOF
 # Special handling of this variable breaking convention for these
 # scripts.
 WEBMODE=${WEBMODE-"${DOT_WEBMODE}"}
-if [ "X${SERVER_SIGNATURE}" != "X" ] -a [ "X${WEBMODE}" == "Xauto" ]; then
+if [ "X${REMOTE_PORT}" != "X" ] -a [ "X${WEBMODE}" == "Xauto" ]; then
 	WEBMODE='yes'
 fi
 # ---------------------------------------------------------------
