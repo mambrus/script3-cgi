@@ -73,14 +73,20 @@ source ${ZNCLOG_DIR}/ui/.znclog.cgi
 source ${ZNCLOG_DIR}/funcs/html.sh
 set -o pipefail
 
-page_header "ZNC log @ ${SERVER_SIGNATURE}"
-
-znclog | \
-	cnvrt_special_chars | \
-	cnvrt_urls2links | \
-	cnvrt_eol
-
-page_footer
+if [ $WEBHELP == "yes" ]; then
+	page_header "ZNC log: Help"
+	print_webhelp  | \
+		cnvrt_urls2links | \
+		cnvrt_eol
+	page_footer
+else
+	page_header "ZNC log @ ${SERVER_SIGNATURE}"
+	znclog | \
+		cnvrt_special_chars | \
+		cnvrt_urls2links | \
+		cnvrt_eol
+	page_footer
+fi
 
 exit 0
 
