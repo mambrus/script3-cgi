@@ -137,6 +137,20 @@ Let server convert any pattern that loocks like a URL to a link.
 Text in logs are output as-is with minimal html overhead. Use with
 <tt>url_convert=no</tt> for a near raw output.
 
+<u>	webmode:    [<b>$DOT_WEBMODE</b>     /   <b>$WEBMODE2</b>]     </u>
+Set this to <b>raw</b> for purely raw output. This mimics the case
+where this cgi-script operates as a normal shell-script.
+
+<i>Note:</i> Dont use this in a normal browser as it will not render. This
+is a debug option and/or to be used with <tt>wget</tt> to get raw logs like
+for example this:
+
+<code>wget -O- 2>/dev/null \
+   '${THIS_SERVER}${SCRIPT_NAME}?channel=$CHANNEL&days_back=$DAYS_BACK&webmode=raw' |\
+   grep whatever
+
+</code>
+
 <u>	help:        [<b>$DOT_WEBHELP</b>      /   <b>$WEBHELP</b>]      </u>
 This help. Note that you can combine this parameter with the others to
 affect the example-links above.
@@ -291,8 +305,13 @@ if [ "X${WEBMODE}" == "Xyes" ]; then
 					   ;;
 				help|webhelp) WEBHELP="${2}"
 					   ;;
-				*)     echo "<hr>Warning:"\
-							"<br>Unrecognized variable \'$1\' passed by FORM in QUERY_STRING.<hr>"
+				webmode) WEBMODE2="${2}"
+					   ;;
+				*)     echo "Content-type: text/html"
+			           echo ""
+				       echo "<hr>Error:"\
+							"<br>Unrecognized variable \"$1\" passed by FORM in QUERY_STRING.<hr>"
+				       exit 1
 					   ;;
 
 			esac
@@ -328,6 +347,7 @@ fi
 	THIS_SERVER=${THIS_SERVER-"${DOT_THIS_SERVER}"}
 	WEBHELP=${WEBHELP-"${DOT_WEBHELP}"}
 	TELETEXT=${TELETEXT-"${DOT_TELETEXT}"}
+	WEBMODE2=${WEBMODE2-"no"}
 
 	if [ $ZNCLOG_DEBUG == "yes" ]; then
 		exec 3>&1 1>&2
@@ -340,6 +360,7 @@ fi
 		echo "  REVERSE=$REVERSE"
 		echo "  CHANNEL=$CHANNEL"
 		echo "  WEBMODE=$WEBMODE"
+		echo "  WEBMODE2=$WEBMODE2"
 		echo "  URL_CONVERT=$URL_CONVERT"
 		echo "  THIS_SERVER=$THIS_SERVER"
 		echo "  WEBHELP=$WEBHELP"

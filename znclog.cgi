@@ -80,12 +80,18 @@ if [ $WEBHELP == "yes" ]; then
 		cnvrt_eol
 	page_footer
 else
-	page_header "ZNC log @ ${SERVER_SIGNATURE}"
-	znclog | \
-		cnvrt_special_chars | \
-		cnvrt_urls2links | \
-		cnvrt_eol
-	page_footer
+	if [ $WEBMODE2 == "raw" ]; then
+		echo "Content-type: text/html"
+		echo ""
+		znclog
+	else
+		page_header "ZNC log @ ${SERVER_SIGNATURE}"
+		znclog | \
+			cnvrt_special_chars | \
+			cnvrt_urls2links | \
+			cnvrt_eol
+		page_footer
+	fi
 fi
 
 exit 0
