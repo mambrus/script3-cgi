@@ -19,26 +19,46 @@ function znclog() {
 		local REV="cat --"
 	fi
 
+	if [ "X${NETWORK}" == "X" ]; then
+		local LOG_PRFX="#${CHANNEL}_"
+	else
+		local LOG_PRFX="${NETWORK}_#${CHANNEL}_"
+	fi
 	local NR_LOGS=$(
 		ls "${ZNC_LOG_DIRECTORY}" 2>/dev/null | \
-		grep -E "#${CHANNEL}_.*\.log" | \
+		grep -E "${LOG_PRFX}.*\.log" | \
 		wc -l
 	)
 	if [ "x${NR_LOGS}" == "x0" ]; then
 		echo -n '=========1=========2=========3=========4'
 		echo    '=========5=========6=========7=========8'
-		echo    "No logs found for channel [#${CHANNEL}]"
+		echo    "No logs found for channel@network: [#${CHANNEL}@${NETWORK}] "
 		echo -n '=========1=========2=========3=========4'
 		echo    '=========5=========6=========7=========8'
 	fi
 
-	for F in $(ls "${ZNC_LOG_DIRECTORY}" | grep -E "#${CHANNEL}_.*\.log" | $TAIL1 | $REV); do
+	for F in $(ls "${ZNC_LOG_DIRECTORY}" | grep -E "${LOG_PRFX}.*\.log" | $TAIL1 | $REV); do
 		(
 			echo -n '=========1=========2=========3=========4'
 			echo    '=========5=========6=========7=========8'
-			CH_NAME=$(echo  $F | cut -f1 -d"_")
-			LOG_DATE=$(echo $F | cut -f2 -d"_" | sed -E 's/\.log$//')
-			echo "${CH_NAME} ${LOG_DATE}"
+
+			local P1=$(echo  $F | cut -f1 -d"_")
+			local P2=$(echo  $F | cut -f2 -d"_")
+			local P3=$(echo  $F | cut -f3 -d"_")
+
+			if [ "X${P3}" != "X" ]; then
+				local NET_NAME=$P1
+				local CH_NAME=$P2
+				local LOG_DATE=$P3
+			else
+				local CH_NAME=$P1
+				local LOG_DATE=$P2
+			fi
+			local LOG_DATE=$(echo $LOG_DATE | sed -E 's/\.log$//')
+
+			#CH_NAME=$(echo  $F | cut -f1 -d"_")
+			#LOG_DATE=$(echo $F | cut -f2 -d"_" | sed -E 's/\.log$//')
+			echo "${CH_NAME} ${LOG_DATE} ${NET_NAME}"
 			echo -n '=========1=========2=========3=========4'
 			echo    '=========5=========6=========7=========8'
 

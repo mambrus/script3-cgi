@@ -25,7 +25,8 @@ eval $(
 	DOT_DAYS_BACK=${DOT_DAYS_BACK-"infinite"}
 	DOT_HIDE_STATUS=${DOT_HIDE_STATUS-"no"}
 	DOT_REVERSE=${DOT_REVERSE-"no"}
-	DOT_CHANNEL=${DOT_CHANNEL-"#bladerf"}
+	DOT_NETWORK=${DOT_NETWORK-""}
+	DOT_CHANNEL=${DOT_CHANNEL-"bladerf"}
 	DOT_WEBMODE=${DOT_WEBMODE-"auto"}
 	DOT_URL_CONVERT=${DOT_URL_CONVERT-"yes"}
 	DOT_THIS_SERVER=${DOT_THIS_SERVER-"http://localhost"}
@@ -61,7 +62,8 @@ OPTIONS
         -L          Log directory [$DOT_ZNC_LOG_DIRECTORY]
         -n          Number of days back [$DOT_DAYS_BACK]
         -x          Hide status changes (yes/no) [$DOT_HIDE_STATUS]
-        -c          Which channel [$DOT_CHANNEL]
+        -N          Which network [$DOT_NETWORK]
+        -c          Which channel [#$DOT_CHANNEL]
         -w          Web formatted or terminal mode (yes/no/auto) [$DOT_WEBMODE]
         -r          Reverse toggle [$DOT_REVERSE]
         -l          Convert URL:s to links toggle [$DOT_URL_CONVERT]
@@ -111,6 +113,12 @@ ${THIS_SERVER}${SCRIPT_NAME}?channel=$CHANNEL&reverse=$REVERSE&hide_status=$HIDE
 <h2>Parameters</h2>
 This script is influenced by the following parameters (default/given value
 are in brackets).
+
+<u>	network:     [<b>$DOT_NETWORK</b>      /   <b>$NETWORK</b>]      </u>
+ZNC can be a bouncer for several different IRC-servers. The various
+server-configurations are called "networks". If this bouncer tracks only one
+network, this field can be left blank. If not, the network name must be
+given or pre-set.
 
 <u>	channel:     [<b>$DOT_CHANNEL</b>      /   <b>$CHANNEL</b>]      </u>
 Which channel to list. Note that only those being monitored will sesult in
@@ -165,7 +173,7 @@ EOF
 }
 
 
-	while getopts hHL:n:x:w:c:s:rltdX OPTION; do
+	while getopts hHL:n:x:w:N:c:s:rltdX OPTION; do
 		case $OPTION in
 		h)
 			if [ -t 1 ]; then
@@ -186,6 +194,9 @@ EOF
 			;;
 		x)
 			HIDE_STATUS="${OPTARG}"
+			;;
+		N)
+			NETWORK="${OPTARG}"
 			;;
 		c)
 			CHANNEL="${OPTARG}"
@@ -281,6 +292,7 @@ if [ "X${WEBMODE}" == "Xyes" ]; then
 		# DAYS_BACK=""
 		# HIDE_STATUS=""
 		# REVERSE=""
+		# NETWORK=""
 		# CHANNEL=""
 
 		for i in $Args ;do
@@ -300,6 +312,8 @@ if [ "X${WEBMODE}" == "Xyes" ]; then
 				url_convert) URL_CONVERT="${2}"
 					   ;;
 				teletext) TELETEXT="${2}"
+					   ;;
+				network) NETWORK="${2}"
 					   ;;
 				channel) CHANNEL="${2}"
 					   ;;
@@ -342,6 +356,7 @@ fi
 	DAYS_BACK=${DAYS_BACK-"${DOT_DAYS_BACK}"}
 	HIDE_STATUS=${HIDE_STATUS-"${DOT_HIDE_STATUS}"}
 	REVERSE=${REVERSE-"${DOT_REVERSE}"}
+	NETWORK=${NETWORK-"${DOT_NETWORK}"}
 	CHANNEL=${CHANNEL-"${DOT_CHANNEL}"}
 	URL_CONVERT=${URL_CONVERT-"${DOT_URL_CONVERT}"}
 	THIS_SERVER=${THIS_SERVER-"${DOT_THIS_SERVER}"}
@@ -358,6 +373,7 @@ fi
 		echo "  DAYS_BACK=$DAYS_BACK"
 		echo "  HIDE_STATUS=$HIDE_STATUS"
 		echo "  REVERSE=$REVERSE"
+		echo "  NETWORK=$NETWORK"
 		echo "  CHANNEL=$CHANNEL"
 		echo "  WEBMODE=$WEBMODE"
 		echo "  WEBMODE2=$WEBMODE2"
