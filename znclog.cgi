@@ -37,7 +37,7 @@ function znclog() {
 		echo    '=========5=========6=========7=========8'
 	fi
 
-	for F in $(ls "${ZNC_LOG_DIRECTORY}" | grep -E "${LOG_PRFX}.*\.log" | $TAIL1 | $REV); do
+	for F in $(ls "${ZNC_LOG_DIRECTORY}" | grep -E "${LOG_PRFX}.*\.log" | sort | $TAIL1 | $REV); do
 		(
 			echo -n '=========1=========2=========3=========4'
 			echo    '=========5=========6=========7=========8'
