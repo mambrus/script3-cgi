@@ -2,6 +2,8 @@
 # Author: Michael Ambrus (ambrmi09@gmail.com)
 # 2017-04-21
 
+# The tricky part in this script is handling the arguments...
+
 if [ -z $WEBDOT2_CGI ]; then
 
 WEBDOT2_CGI="webdot2.cgi"
@@ -9,25 +11,53 @@ WEBDOT2_CGI="webdot2.cgi"
 
 function webdot2() {
 	local FNAME=$1
+
+	ENGINE=$(tr '[:upper:]' '[:lower:]' <<< ${ENGINE})
+	FORMAT=$(tr '[:upper:]' '[:lower:]' <<< ${FORMAT})
+
+	unset QUERY_STRING
+	unset PATH_INFO
+
+	echo "$EXEC_PATH/webdot.cgi ${URI}.${ENGINE}.${FORMAT}" >> \
+		"$WEBDOT2_LOGFILE"
+	$EXEC_PATH/webdot.cgi "${URI}.${ENGINE}.${FORMAT}"
 }
 
-source s3.ebasename.sh
-if [ "$WEBDOT2_CGI" == $( ebasename $0 ) ]; then
-	#Not sourced, do something with this.
 
-	#Script root directory.
-	WEBDOT2_DIR=$(dirname $(readlink -f $0))
-	export PATH=${WEBDOT2_DIR}:$PATH
+# ATTENTION: FUNDAMENTAL SETTINGS FOLLOW
+# THESE MAKE ASSUMPTIONS. PLEASE CHECK!
 
-	WEBDOT2_CGI_INFO=${WEBDOT2_CGI}
-	#source .cgi.ui..webdot2.cgi
-	source ${WEBDOT2_DIR}/ui/.webdot2.cgi
-	set -o pipefail
+HOME=${HOME-"$(dirname $(dirname $(echo $PWD)))"}
+USER=${USER-"$(basename $(echo $HOME))"}
+PATH=${PATH-"${HOME}/bin:$PATH"}
 
-	webdot2 "${FNAME}" > "${DEF_TMP_NAME}_out" && \
-		mv "${DEF_TMP_NAME}_out" ${1}
+#Script root directory.
+WEBDOT2_DIR=$(dirname $(readlink -f $0))
+export PATH=${WEBDOT2_DIR}:$PATH
 
-	exit $?
+WEBDOT2_CGI_INFO=${WEBDOT2_CGI}
+source ${WEBDOT2_DIR}/funcs/html.sh
+source ${WEBDOT2_DIR}/ui/.webdot2_webhelp.cgi
+source ${WEBDOT2_DIR}/ui/.webdot2.cgi
+set -o pipefail
+
+
+if [ "X${WEBHELP}" == "Xyes" ]; then
+	page_header "web log: Help"
+	print_webhelp  | \
+		cnvrt_urls2links | \
+		cnvrt_eol
+	page_footer
+else
+	if [ "X${WEBMODE2}" == "Xraw" ]; then
+		echo "Content-type: text/html"
+		echo ""
+		webdot2
+	else
+		webdot2
+	fi
 fi
+
+exit 0
 
 fi

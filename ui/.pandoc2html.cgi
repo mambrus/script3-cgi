@@ -1,40 +1,40 @@
-# UI part of all template tool
+# UI part of all pandoc2html tool
 # This is not even a script, stupid and can't exist alone. It is purely
 # meant for being included.
 
-DEF_TMP_NAME="/tmp/${TEMPLATE_CGI_INFO}_inter"
-TEMPLATE_DOTFILE=.template
+DEF_TMP_NAME="/tmp/${PANDOC2HTML_CGI_INFO}_inter"
+PANDOC2HTML_DOTFILE=.pandoc2html
 
-if ! [ -f ${HOME}/${TEMPLATE_DOTFILE} ]; then
+if ! [ -f ${HOME}/${PANDOC2HTML_DOTFILE} ]; then
 	echo -n "ERROR $(basename $(readlink -f $0)): " 1>&2
-	echo "File [$TEMPLATE_DOTFILE] in \$HOME missing! Please set-up..." 1>&2
+	echo "File [$PANDOC2HTML_DOTFILE] in \$HOME missing! Please set-up..." 1>&2
 	exit 1
 fi
 
 # Get user environment settings from dot-file
 eval $(
-	cat "${HOME}/${TEMPLATE_DOTFILE}" | \
+	cat "${HOME}/${PANDOC2HTML_DOTFILE}" | \
 	grep -vE '^#' | \
 	grep -vE '^[[:space:]]*$' | \
 	sed -E 's/^/export /'
 )
 
-function print_template_help() {
+function print_pandoc2html_help() {
 			cat <<EOF
 NAME
-        $TEMPLATE_CGI_INFO - Blah blah
+        $PANDOC2HTML_CGI_INFO - Blah blah
 
 SYNOPSIS
-        $TEMPLATE_CGI_INFO [options] filename
+        $PANDOC2HTML_CGI_INFO [options] filename
 
 DESCRIPTION
-        $TEMPLATE_CGI_INFO blah
+        $PANDOC2HTML_CGI_INFO blah
 
     Something
         Blah
 
 EXAMPLES
-        $TEMPLATE_CGI_INFO -msmiffo
+        $PANDOC2HTML_CGI_INFO -msmiffo
 
 OPTIONS
 
@@ -64,18 +64,18 @@ EOF
 		case $OPTION in
 		h)
 			if [ -t 1 ]; then
-				print_template_help $0 | less -R
+				print_pandoc2html_help $0 | less -R
 			else
-				print_template_help $0
+				print_pandoc2html_help $0
 			fi
 			exit 0
 			;;
 		d)
-			TEMPLATE_DEBUG="yes"
+			PANDOC2HTML_DEBUG="yes"
 			;;
 		?)
 			echo "Syntax error: options" 1>&2
-			echo "For help, type: $TEMPLATE_CGI_INFO -h" 1>&2
+			echo "For help, type: $PANDOC2HTML_CGI_INFO -h" 1>&2
 			exit 2
 			;;
 
@@ -85,21 +85,21 @@ EOF
 
 #	if [ $# -ne 1 ]; then
 #		echo "Syntax error: arguments" \
-#			"$TEMPLATE_CGI_INFO number of arguments should be exactly one:" \
+#			"$PANDOC2HTML_CGI_INFO number of arguments should be exactly one:" \
 #			"input filename" 1>&2
-#		echo "For help, type: $TEMPLATE_CGI_INFO -h" 1>&2
+#		echo "For help, type: $PANDOC2HTML_CGI_INFO -h" 1>&2
 #		exit 2
 #	fi
 
 
 #Actuating defaults if needed
-	TEMPLATE_DEBUG=${TEMPLATE_DEBUG-"no"}
+	PANDOC2HTML_DEBUG=${PANDOC2HTML_DEBUG-"no"}
 
-	if [ $TEMPLATE_DEBUG == "yes" ]; then
+	if [ $PANDOC2HTML_DEBUG == "yes" ]; then
 		exec 3>&1 1>&2
 		echo "Variables:"
-		echo "  TEMPLATE_DEBUG=$TEMPLATE_DEBUG"
-		echo "  TEMPLATE_DIR=$TEMPLATE_DIR"
+		echo "  PANDOC2HTML_DEBUG=$PANDOC2HTML_DEBUG"
+		echo "  PANDOC2HTML_DIR=$PANDOC2HTML_DIR"
 		echo
 		exec 1>&3 3>&-
 	fi
