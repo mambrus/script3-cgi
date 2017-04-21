@@ -1,19 +1,19 @@
-# UI part of all webdot2 tool
+# UI part of all webpandoc tool
 # This is not even a script, stupid and can't exist alone. It is purely
 # meant for being included.
 
-DEF_TMP_NAME="/tmp/${WEBDOT2_CGI_INFO}_inter"
-WEBDOT2_DOTFILE=.webdot2
+DEF_TMP_NAME="/tmp/${PANDOC2HTML_CGI_INFO}_inter"
+PANDOC2HTML_DOTFILE=.webpandoc
 
-if ! [ -f ${HOME}/${WEBDOT2_DOTFILE} ]; then
+if ! [ -f ${HOME}/${PANDOC2HTML_DOTFILE} ]; then
 	echo -n "ERROR $(basename $(readlink -f $0)): " 1>&2
-	echo "File ${HOME}/${WEBDOT2_DOTFILE} (i.e. [$WEBDOT2_DOTFILE] in \$HOME) missing! Please set-up..." 1>&2
+	echo "File ${HOME}/${PANDOC2HTML_DOTFILE} (i.e. [$PANDOC2HTML_DOTFILE] in \$HOME) missing! Please set-up..." 1>&2
 	exit 1
 fi
 
 # Get user environment settings from dot-file
 eval $(
-	cat "${HOME}/${WEBDOT2_DOTFILE}" | \
+	cat "${HOME}/${PANDOC2HTML_DOTFILE}" | \
 	grep -vE '^#' | \
 	grep -vE '^[[:space:]]*$' | \
 	sed -E 's/^/export /'
@@ -21,29 +21,33 @@ eval $(
 
 #Hard-coded defaults of default. 2 stage over-ridden if not set via DOT-file
 #Step 1
-	DOT_WEBDOT2_LOGFILE=${DOT_WEBDOT2_LOGFILE-"/tmp/webdot2_log"}
+	DOT_PANDOC2HTML_LOGFILE=${DOT_PANDOC2HTML_LOGFILE-"/tmp/webpandoc_log"}
 	DOT_WEBMODE=${DOT_WEBMODE-"auto"}
 	DOT_URL_CONVERT=${DOT_URL_CONVERT-"yes"}
 	DOT_HELP_ON_NOARG=${DOT_HELP_ON_NOARG-"yes"}
 	DOT_WEBHELP=${DOT_WEBHELP-"no"}
 	DOT_EXEC_PATH=${DOT_EXEC_PATH-"/usr/bin"}
+	DOT_WORK_DIR=${DOT_WORK_DIR-"/tmp/webpandoc"}
+	DOT_STANDALONE=${DOT_STANDALONE="yes"}
+	DOT_OFORMAT=${DOT_OFORMAT-"html"}
+	DOT_IFORMAT=${DOT_IFORMAT-"markdown"}
 
-function print_webdot2_help() {
+function print_webpandoc_help() {
 			cat <<EOF
 NAME
-        $WEBDOT2_CGI_INFO - Blah blah
+        $PANDOC2HTML_CGI_INFO - Blah blah
 
 SYNOPSIS
-        $WEBDOT2_CGI_INFO [options] filename
+        $PANDOC2HTML_CGI_INFO [options] filename
 
 DESCRIPTION
-        $WEBDOT2_CGI_INFO blah
+        $PANDOC2HTML_CGI_INFO blah
 
     Something
         Blah
 
 EXAMPLES
-        $WEBDOT2_CGI_INFO -msmiffo
+        $PANDOC2HTML_CGI_INFO -msmiffo
 
 OPTIONS
 
@@ -70,7 +74,7 @@ AUTHOR
 EOF
 }
 
-	while getopts hHL:x:w:rltdX OPTION; do
+	while getopts hf:t:D:sHL:x:w:rltdX OPTION; do
 		case $OPTION in
 		h)
 			if [ -t 1 ]; then
@@ -80,8 +84,20 @@ EOF
 			fi
 			exit 0
 			;;
+		f)
+			IFORMAT="${OPTARG}"
+			;;
+		t)
+			OFORMAT="${OPTARG}"
+			;;
+		D)
+			WORKDIR="${OPTARG}"
+			;;
+		s)
+			STANDALONE="yes"
+			;;
 		L)
-			WEBDOT2_LOGFILE="${OPTARG}"
+			PANDOC2HTML_LOGFILE="${OPTARG}"
 			;;
 		H)
 			WEBHELP="yes"
@@ -121,11 +137,11 @@ EOF
 			fi
 			;;
 		d)
-			WEBDOT2_DEBUG="yes"
+			PANDOC2HTML_DEBUG="yes"
 			;;
 		?)
 			echo "Syntax error: options" 1>&2
-			echo "For help, type: $WEBDOT2LOG_CGI_INFO -h" 1>&2
+			echo "For help, type: $PANDOC2HTMLLOG_CGI_INFO -h" 1>&2
 			exit 2
 			;;
 
@@ -167,14 +183,40 @@ if [ "X${WEBMODE}" == "Xyes" ] ; then
 		fi
 	fi
 
-	# Parse first. I.e. if QUERY_STRING also exists, it will have presidence
+	# Parse first. I.e. if QUERY_STRING also exists, it will have presidency
 	# where in conflict
 	if [ "X${PATH_INFO}" != "X" ]; then
-		ENGINE=$(cut -f2 -d"/" <<< ${PATH_INFO})
-		FORMAT=$(cut -f3 -d"/" <<< ${PATH_INFO})
 
-		PROTO=$(cut -f4 -d"/" <<< ${PATH_INFO})
+		RPATH_INFO=$(
+			echo $PATH_INFO | \
+			cut -f1 -d":" | \
+			sed -Ee 's/(.*)(\/.*$)/\1/'
+		)
+		NPATHS=$(echo $RPATH_INFO | sed -Ee 's/\//\n/g' | wc -l)
 		URIN=$(sed -e 's/.*://' <<< ${PATH_INFO} | cut -f1 -d"?")
+
+
+		case $NPATHS in
+		1)
+			PROTO=$(cut -f2 -d"/" <<< ${PATH_INFO})
+			;;
+		2)
+			IFORMAT=$(cut -f2 -d"/" <<< ${PATH_INFO})
+			PROTO=$(cut -f3 -d"/" <<< ${PATH_INFO})
+			;;
+		3)
+			IFORMAT=$(cut -f2 -d"/" <<< ${PATH_INFO})
+			OFORMAT=$(cut -f3 -d"/" <<< ${PATH_INFO})
+			PROTO=$(cut -f4 -d"/" <<< ${PATH_INFO})
+			;;
+		*)
+			echo "Content-type: text/html"
+			echo ""
+			echo "<hr>Error:"\
+				"<br>Unrecognized PATH_INFO depth: [$PATH_INFO]<hr>"
+			exit 1
+			;;
+		esac
 
 		#Note PATH_INFO strips consecutive "/" so work-around needed
 		case $(tr '[:upper:]' '[:lower:]' <<< $PROTO) in
@@ -184,7 +226,6 @@ if [ "X${WEBMODE}" == "Xyes" ] ; then
 		file:)
 			EXTRA="//"
 			;;
-
 		esac
 
 		URI="${PROTO}${EXTRA}${URIN}"
@@ -192,6 +233,8 @@ if [ "X${WEBMODE}" == "Xyes" ] ; then
 		unset PROTO
 		unset URIN
 		unset EXTRA
+		unset RPATH_INFO
+		unset NPATHS
 	fi
 
 	if [ "X${QUERY_STRING}" != "X" ]; then
@@ -216,17 +259,17 @@ if [ "X${WEBMODE}" == "Xyes" ] ; then
 			case $(tr '[:upper:]' '[:lower:]' <<< $1) in
 				uri) URI="${2}"
 					   ;;
-				engine) ENGINE="${2}"
+				oformat) OFORMAT="${2}"
 					   ;;
-				format) FORMAT="${2}"
+				iformat) IFORMAT="${2}"
 					   ;;
-				url_convert) URL_CONVERT="${2}"
+				standalone) STANDALONE="${2}"
 					   ;;
 				teletext) TELETEXT="${2}"
 					   ;;
 				webmode) WEBMODE2="${2}"
 					   ;;
-				debug) WEBDOT2_DEBUG="${2}"
+				debug) PANDOC2HTML_DEBUG="${2}"
 					   ;;
 				*)     echo "Content-type: text/html"
 			           echo ""
@@ -242,20 +285,24 @@ fi
 
 
 #Actuating defaults if needed
-	WEBDOT2_DEBUG=${WEBDOT2_DEBUG-"no"}
+	PANDOC2HTML_DEBUG=${PANDOC2HTML_DEBUG-"no"}
 
 
 #Final variable deduction
 #Step 2
-	WEBDOT2_LOGFILE=${WEBDOT2_LOGFILE-"${DOT_WEBDOT2_LOGFILE}"}
+	PANDOC2HTML_LOGFILE=${PANDOC2HTML_LOGFILE-"${DOT_PANDOC2HTML_LOGFILE}"}
 	URL_CONVERT=${URL_CONVERT-"${DOT_URL_CONVERT}"}
 	THIS_SERVER=${THIS_SERVER-"${DOT_THIS_SERVER}"}
 	WEBHELP=${WEBHELP-"${DOT_WEBHELP}"}
 	TELETEXT=${TELETEXT-"${DOT_TELETEXT}"}
 	WEBMODE2=${WEBMODE2-"no"}
 	EXEC_PATH=${EXEC_PATH-"${EXEC_PATH}"}
+	WORK_DIR=${WORK_DIR-"$DOT_WORK_DIR"}
+	STANDALONE=${STANDALONE="$DOT_STANDALONE"}
+	OFORMAT=${OFORMAT-"$DOT_OFORMAT"}
+	IFORMAT=${IFORMAT-"$DOT_IFORMAT"}
 
-	if [ $WEBDOT2_DEBUG == "yes" ]; then
+	if [ $PANDOC2HTML_DEBUG == "yes" ]; then
 		#exec 3>&1 1>&2
 
 		#Note the two below will not be debugged correctly
@@ -266,11 +313,11 @@ fi
 		page_header "Debug env-vars:"
 
 		(
-			ENGINE=$(tr '[:upper:]' '[:lower:]' <<< ${ENGINE})
-			FORMAT=$(tr '[:upper:]' '[:lower:]' <<< ${FORMAT})
+			OFORMAT=$(tr '[:upper:]' '[:lower:]' <<< ${OFORMAT})
+			IFORMAT=$(tr '[:upper:]' '[:lower:]' <<< ${IFORMAT})
 
-			echo "  WEBDOT2_DEBUG: [$WEBDOT2_DEBUG]"
-			echo "  WEBDOT2_LOGFILE: [$WEBDOT2_LOGFILE]"
+			echo "  PANDOC2HTML_DEBUG: [$PANDOC2HTML_DEBUG]"
+			echo "  PANDOC2HTML_LOGFILE: [$PANDOC2HTML_LOGFILE]"
 			echo "  WEBMODE: [$WEBMODE]"
 			echo "  WEBMODE2: [$WEBMODE2]"
 			echo "  URL_CONVERT: [$URL_CONVERT]"
@@ -278,10 +325,11 @@ fi
 			echo "  HELP_ON_NOARG: [$HELP_ON_NOARG]"
 			echo "  TELETEXT: [$TELETEXT]"
 			echo
-			echo "  ENGINE: [${ENGINE}]"
-			echo "  FORMAT: [${FORMAT}]"
+			echo "  WORKDIR: [${WORKDIR}]"
+			echo "  STANDALONE: [${STANDALONE}]"
+			echo "  OFORMAT: [${OFORMAT}]"
+			echo "  IFORMAT: [${IFORMAT}]"
 			echo "  URI: [${URI}]"
-			echo "  will exec: $EXEC_PATH/webdot.cgi ${URI}.${ENGINE}.${FORMAT}"
 			echo
 			echo "  QUERY_STRING: [$QUERY_STRING]"
 			echo "  PATH_INFO: [$PATH_INFO]"
