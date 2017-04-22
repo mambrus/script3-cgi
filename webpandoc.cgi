@@ -22,12 +22,23 @@ function webpandoc() {
 	unset QUERY_STRING
 	unset PATH_INFO
 
+	if [ "X${EXEC_PATH}" == "X" ]; then
+		EXEC_PATH=$(dirname $(which pandoc))
+	fi
+
 #	echo "wget -O - ${URI} | $EXEC_PATH/pandoc ${SFLAG} -f ${IFORMAT} -t ${OFORMAT} -o-" >> \
 #		"$WEBPANDOC_LOGFILE"
 
 	echo "Content-type: text/html"
 	echo ""
-	wget -O - ${URI} | $EXEC_PATH/pandoc ${SFLAG} -f ${IFORMAT} -t ${OFORMAT} -o-
+	
+	if [ "X${EXEC_PATH}" == "X" ]; then
+		echo "Error: Pandoc not installed on host [X${EXEC_PATH}]"
+		echo "Error: Pandoc not installed on host" >&2
+		exit 1
+	fi
+	
+	wget -O- ${URI} | $EXEC_PATH/pandoc ${SFLAG} -f ${IFORMAT} -t ${OFORMAT} -o-
 }
 
 
@@ -36,7 +47,7 @@ function webpandoc() {
 
 HOME=${HOME-"$(dirname $(dirname $(echo $PWD)))"}
 USER=${USER-"$(basename $(echo $HOME))"}
-PATH=${PATH-"${HOME}/bin:$PATH"}
+PATH=${PATH-"${HOME}/bin:/usr/bin:$PATH"}
 
 #Script root directory.
 WEBPANDOC_DIR=$(dirname $(readlink -f $0))
